@@ -21,7 +21,9 @@ struct Quad {
 
 impl Quad {
     fn new(left: u32, top: u32, right: u32, bottom: u32, image: Rc<RefCell<DynamicImage>>) -> Self {
-        let cropped_image = image.borrow_mut().crop(left, top, right-left, bottom - top);
+        let cropped_image = image
+            .borrow_mut()
+            .crop(left, top, right - left, bottom - top);
         let (color, error) = averge_color_from_image(&cropped_image);
 
         Self { 
