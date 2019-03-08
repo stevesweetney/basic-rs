@@ -26,7 +26,7 @@ impl Quad {
             .crop(left, top, right - left, bottom - top);
         let (color, error) = averge_color_from_image(&cropped_image);
 
-        Self { 
+        Self {
             left,
             top,
             right,
@@ -35,7 +35,7 @@ impl Quad {
             error,
             children: Vec::new(),
             image,
-         }
+        }
     }
 
     fn area(&self) -> u32 {
@@ -56,6 +56,31 @@ impl Quad {
         self.children.push(Rc::new(RefCell::new(tr)));
         self.children.push(Rc::new(RefCell::new(bl)));
         self.children.push(Rc::new(RefCell::new(br)));
+    }
+
+    fn get_leaf_nodes(self) -> Vec<Rc<RefCell<Self>>> {
+        Self::leaves(Rc::new(RefCell::new(self)))
+    }
+
+    fn leaves(quad: Rc<RefCell<Self>>) -> Vec<Rc<RefCell<Self>>> {
+        let mut leaves = Vec::new();
+
+        if quad.borrow().children.len() == 0 {
+            leaves.push(quad);
+            return leaves;
+        }
+
+        for child in quad.borrow().children.iter().cloned() {
+            let child_len = child.borrow().children.len();
+            match child_len {
+                0 => {
+                    leaves.push(child);
+                }
+                _ => leaves.append(&mut Self::leaves(child)),
+            }
+        }
+
+        leaves
     }
 }
 
