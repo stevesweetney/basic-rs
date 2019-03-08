@@ -59,28 +59,21 @@ impl Quad {
     }
 
     fn get_leaf_nodes(self) -> Vec<Rc<RefCell<Self>>> {
-        Self::leaves(Rc::new(RefCell::new(self)))
+        let mut leaves = Vec::new();
+        Self::leaves(Rc::new(RefCell::new(self)), &mut leaves);
+
+        leaves
     }
 
-    fn leaves(quad: Rc<RefCell<Self>>) -> Vec<Rc<RefCell<Self>>> {
-        let mut leaves = Vec::new();
-
+    fn leaves(quad: Rc<RefCell<Self>>, leaves: &mut Vec<Rc<RefCell<Self>>>) {
         if quad.borrow().children.len() == 0 {
             leaves.push(quad);
-            return leaves;
+            return;
         }
 
         for child in quad.borrow().children.iter().cloned() {
-            let child_len = child.borrow().children.len();
-            match child_len {
-                0 => {
-                    leaves.push(child);
-                }
-                _ => leaves.append(&mut Self::leaves(child)),
-            }
+            Self::leaves(child, leaves)
         }
-
-        leaves
     }
 }
 
