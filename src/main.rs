@@ -7,6 +7,8 @@ use std::rc::Rc;
 const iterations: u32 = 2048;
 
 type Color = (u32, u32, u32);
+type RcQuad = Rc<RefCell<Quad>>;
+type RcImage = Rc<RefCell<DynamicImage>>;
 
 struct Quad {
     left: u32,
@@ -15,12 +17,12 @@ struct Quad {
     bottom: u32,
     color: Color,
     error: f32,
-    children: Vec<Rc<RefCell<Quad>>>,
-    image: Rc<RefCell<DynamicImage>>,
+    children: Vec<RcQuad>,
+    image: RcImage,
 }
 
 impl Quad {
-    fn new(left: u32, top: u32, right: u32, bottom: u32, image: Rc<RefCell<DynamicImage>>) -> Self {
+    fn new(left: u32, top: u32, right: u32, bottom: u32, image: RcImage) -> Self {
         let cropped_image = image
             .borrow_mut()
             .crop(left, top, right - left, bottom - top);
@@ -58,14 +60,14 @@ impl Quad {
         self.children.push(Rc::new(RefCell::new(br)));
     }
 
-    fn get_leaf_nodes(self) -> Vec<Rc<RefCell<Self>>> {
+    fn get_leaf_nodes(self) -> Vec<RcQuad> {
         let mut leaves = Vec::new();
         Self::leaves(Rc::new(RefCell::new(self)), &mut leaves);
 
         leaves
     }
 
-    fn leaves(quad: Rc<RefCell<Self>>, leaves: &mut Vec<Rc<RefCell<Self>>>) {
+    fn leaves(quad: RcQuad, leaves: &mut Vec<RcQuad>) {
         if quad.borrow().children.len() == 0 {
             leaves.push(quad);
             return;
