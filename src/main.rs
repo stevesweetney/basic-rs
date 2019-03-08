@@ -1,11 +1,61 @@
 use image::{self, DynamicImage, GenericImageView, Pixel};
+use std::cell::RefCell;
 use std::collections::BinaryHeap;
 use std::env;
+use std::rc::Rc;
 
 const iterations: u32 = 2048;
 
 type Color = (u32, u32, u32);
 
+struct Quad {
+    left: u32,
+    top: u32,
+    right: u32,
+    bottom: u32,
+    color: Color,
+    error: f32,
+    children: Vec<Rc<RefCell<Quad>>>,
+    image: Rc<RefCell<DynamicImage>>,
+}
+
+impl Quad {
+    fn new(left: u32, top: u32, right: u32, bottom: u32, image: Rc<RefCell<DynamicImage>>) -> Self {
+        let cropped_image = image.borrow_mut().crop(left, top, right-left, bottom - top);
+        let (color, error) = averge_color_from_image(&cropped_image);
+
+        Self { 
+            left,
+            top,
+            right,
+            bottom,
+            color,
+            error,
+            children: Vec::new(),
+            image,
+         }
+    }
+
+    fn area(&self) -> u32 {
+        (self.right - self.left) * (self.bottom - self.top)
+    }
+
+    fn split(&mut self) {
+        let mid_x = self.left + (self.right - self.left) / 2;
+        let mid_y = self.top + (self.bottom - self.top) / 2;
+
+        let tl = Quad::new(self.left, self.top, mid_x, mid_y, self.image.clone());
+        let tr = Quad::new(mid_x, self.top, self.right, mid_y, self.image.clone());
+        let bl = Quad::new(self.left, mid_y, mid_x, self.bottom, self.image.clone());
+        let br = Quad::new(mid_x, mid_y, self.right, self.bottom, self.image.clone());
+
+        self.children.clear();
+        self.children.push(Rc::new(RefCell::new(tl)));
+        self.children.push(Rc::new(RefCell::new(tr)));
+        self.children.push(Rc::new(RefCell::new(bl)));
+        self.children.push(Rc::new(RefCell::new(br)));
+    }
+}
 
 fn averge_color_from_image(image: &DynamicImage) -> (Color, f32) {
     let mut histogram = [0; 768];
