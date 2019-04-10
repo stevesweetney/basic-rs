@@ -1,16 +1,90 @@
-use image::{self, DynamicImage, GenericImageView, Pixel};
+use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbImage};
 use std::cell::RefCell;
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BinaryHeap;
 use std::env;
 use std::rc::Rc;
 
-const iterations: u32 = 2048;
+const IMAGE_BOUNDS: u32 = 256;
 
 const DEFAULT_ITERATIONS: u32 = 1024;
+
+type Color = (u8, u8, u8);
 type RcQuad = Rc<RefCell<Quad>>;
 type RcImage = Rc<RefCell<DynamicImage>>;
 
+struct Model {
+    width: u32,
+    height: u32,
+    quads: BinaryHeap<RcQuad>,
+    root: Option<RcQuad>,
+}
+
+impl Model {
+    fn new(target: DynamicImage) -> Self {
+        let (height, width) = (target.height(), target.width());
+        let target = Rc::new(RefCell::new(target));
+
+        let q = Quad::new(0, 0, width, height, target.clone());
+        let root = Rc::new(RefCell::new(q));
+
+        let mut quads = BinaryHeap::new();
+        quads.push(root.clone());
+        Self {
+            root: Some(root),
+            height,
+            width,
+            quads,
+        }
+    }
+
+    fn split(&mut self) {
+        if let Some(quad) = self.quads.pop() {
+            let mut quad = quad.borrow_mut();
+            quad.split();
+
+            for child in &quad.children {
+                self.quads.push(child.clone())
+            }
+        }
+    }
+
+    fn render(&mut self, result_width: u32, result_height: u32) {
+        if let Some(root) = self.root.take() {
+            let mut result = RgbImage::new(self.width, self.height);
+            let root = (*root).clone().into_inner();
+
+            for quad in root.get_leaf_nodes() {
+                let quad = quad.borrow();
+                let height = quad.bottom - quad.top;
+                let width = quad.right - quad.left;
+
+                let mut cropped = imageops::crop(&mut result, quad.left, quad.top, width, height);
+
+                let coords: Vec<_> = cropped
+                    .pixels()
+                    .map(|(x, y, _)| (x.clone(), y.clone()))
+                    .collect();
+
+                for (x, y) in coords {
+                    let p = cropped.get_pixel_mut(x, y);
+                    let ch = p.channels_mut();
+                    ch[0] = quad.color.0;
+                    ch[1] = quad.color.1;
+                    ch[2] = quad.color.2;
+                }
+            }
+
+            let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
+
+            resized
+                .save("./output.png")
+                .expect("Error saving output.png");
+        }
+    }
+}
+
+#[derive(Clone)]
 struct Quad {
     left: u32,
     top: u32,
@@ -132,24 +206,32 @@ fn averge_color_from_image(image: &DynamicImage) -> (Color, f32) {
     let (blue, be) = weighted_average(&histogram[256..=511]);
     let (green, ge) = weighted_average(&histogram[512..=767]);
 
-    ((red, green, blue), re * 0.3 + ge * 0.6 + be + 0.1)
+    (
+        (red as u8, green as u8, blue as u8),
+        re * 0.3 + ge * 0.6 + be + 0.1,
+    )
 }
 
 fn weighted_average(histogram: &[u32]) -> (u32, f32) {
     let mut weighted_sum = 0;
     let mut total = 0;
+
     for (idx, c) in histogram.iter().enumerate() {
         weighted_sum += (idx as u32) * c;
         total += c;
+    }
+
+    if total == 0 {
+        return (0, 0.0);
     }
     let value = weighted_sum / total;
     // root mean square error
     let mut error = 0;
     for (idx, c) in histogram.iter().enumerate() {
-        error += c * (value - idx as u32).pow(2);
+        error += *c as u64 * ((value as i64) - (idx as i64)).pow(2) as u64;
     }
 
-    (value, ((error / total) as f32).sqrt())
+    (value, ((error / total as u64) as f32).sqrt())
 }
 
 fn main() {
@@ -167,5 +249,13 @@ fn main() {
     let image =
         image::open(image_path).expect(&format!("Error opening target image {}\n", image_path));
 
-    image.save("./output.png");
+    let (width, height) = image.dimensions();
+
+    let mut model = Model::new(image.resize(IMAGE_BOUNDS, IMAGE_BOUNDS, imageops::Nearest));
+
+    for _ in 0..iterations {
+        model.split();
+    }
+
+    model.render(width, height);
 }
