@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["stevesweetney <stevesweetney@gmail.com>"]
 edition = "2018"
 
+[lib]
+name="basic"
+path="src/lib.rs"
+
+[[bin]]
+name="basic"
+path="src/main.rs"
+
 [dependencies]
 image = "*"
 
