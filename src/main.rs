@@ -1,5 +1,6 @@
 use image::{self, DynamicImage, GenericImageView, Pixel};
 use std::cell::RefCell;
+use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BinaryHeap;
 use std::env;
 use std::rc::Rc;
@@ -77,7 +78,40 @@ impl Quad {
             Self::leaves(child, leaves)
         }
     }
+
+    fn score(&self) -> f64 {
+        (self.error as f64) * (self.area() as f64).powf(0.25)
+    }
 }
+
+impl Ord for Quad {
+    fn cmp(&self, other: &Quad) -> Ordering {
+        let score = self.score();
+        let other_score = other.score();
+
+        match score.partial_cmp(&other_score) {
+            Some(ordering) => ordering,
+            None => Ordering::Greater,
+        }
+    }
+}
+
+impl PartialOrd for Quad {
+    fn partial_cmp(&self, other: &Quad) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Quad {
+    fn eq(&self, other: &Quad) -> bool {
+        self.top == other.top
+            && self.left == other.left
+            && self.right == other.right
+            && self.bottom == other.bottom
+    }
+}
+
+impl Eq for Quad {}
 
 fn averge_color_from_image(image: &DynamicImage) -> (Color, f32) {
     let mut histogram = [0; 768];
