@@ -96,7 +96,7 @@ impl Quad {
         let cropped_image = image
             .borrow_mut()
             .crop(left, top, right - left, bottom - top);
-        let (color, error) = averge_color_from_image(&cropped_image);
+        let (color, error) = average_color_from_image(&cropped_image);
 
         Self {
             left,
@@ -182,7 +182,7 @@ impl PartialEq for Quad {
 
 impl Eq for Quad {}
 
-fn averge_color_from_image(image: &DynamicImage) -> (Color, f32) {
+fn average_color_from_image(image: &DynamicImage) -> (Color, f32) {
     let mut histogram = [0; 768];
     for p in image.pixels() {
         let pix = p.2.to_rgb();
