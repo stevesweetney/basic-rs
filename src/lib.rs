@@ -194,8 +194,8 @@ fn average_color_from_image(image: &DynamicImage) -> (Color, f32) {
     }
 
     let (red, re) = weighted_average(&histogram[0..=255]);
-    let (blue, be) = weighted_average(&histogram[256..=511]);
-    let (green, ge) = weighted_average(&histogram[512..=767]);
+    let (green, ge) = weighted_average(&histogram[256..=511]);
+    let (blue, be) = weighted_average(&histogram[512..=767]);
 
     (
         (red as u8, green as u8, blue as u8),
