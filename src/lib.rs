@@ -56,10 +56,7 @@ impl Model {
 
                 let mut cropped = imageops::crop(&mut result, quad.left, quad.top, width, height);
 
-                let coords: Vec<_> = cropped
-                    .pixels()
-                    .map(|(x, y, _)| (x.clone(), y.clone()))
-                    .collect();
+                let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
 
                 for (x, y) in coords {
                     let p = cropped.get_pixel_mut(x, y);
@@ -138,7 +135,7 @@ impl Quad {
     }
 
     fn leaves(quad: RcQuad, leaves: &mut Vec<RcQuad>) {
-        if quad.borrow().children.len() == 0 {
+        if quad.borrow().children.is_empty() {
             leaves.push(quad);
             return;
         }
@@ -149,7 +146,7 @@ impl Quad {
     }
 
     fn score(&self) -> f64 {
-        (self.error as f64) * (self.area() as f64).powf(0.25)
+        f64::from(self.error) * f64::from(self.area()).powf(0.25)
     }
 }
 
@@ -223,8 +220,8 @@ fn weighted_average(histogram: &[u32]) -> (u32, f32) {
     // root mean square error
     let mut error = 0;
     for (idx, c) in histogram.iter().enumerate() {
-        error += *c as u64 * ((value as i64) - (idx as i64)).pow(2) as u64;
+        error += u64::from(*c) * (i64::from(value) - idx as i64).pow(2) as u64;
     }
 
-    (value, ((error / total as u64) as f32).sqrt())
+    (value, ((error / u64::from(total)) as f32).sqrt())
 }

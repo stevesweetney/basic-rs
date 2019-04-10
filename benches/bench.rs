@@ -10,8 +10,8 @@ fn basic_use() {
     let image_path = "./input.jpg";
     let iterations = DEFAULT_ITERATIONS;
 
-    let image =
-        image::open(image_path).expect(&format!("Error opening target image {}\n", image_path));
+    let image = image::open(image_path)
+        .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
     let (width, height) = image.dimensions();
 
