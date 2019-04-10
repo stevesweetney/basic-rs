@@ -181,8 +181,7 @@ impl Eq for Quad {}
 
 fn average_color_from_image(image: &DynamicImage) -> (Color, f32) {
     let mut histogram = [0; 768];
-    for p in image.pixels() {
-        let pix = p.2.to_rgb();
+    for (_x, _y, pix) in image.pixels() {
         let channels = pix.channels();
 
         let red = channels[0] as usize;
