@@ -46,9 +46,10 @@ impl Model {
         }
     }
 
-    pub fn render(&mut self, result_width: u32, result_height: u32) {
+    pub fn render(&mut self, result_width: u32, result_height: u32, pad: bool) {
         if let Some(root) = self.root.take() {
-            let mut result = RgbImage::new(self.width, self.height);
+            let padding = if pad { 1 } else { 0 };
+            let mut result = RgbImage::new(self.width + padding, self.height + padding);
             let root = (*root).clone().into_inner();
 
             for quad in root.get_leaf_nodes() {
@@ -56,7 +57,13 @@ impl Model {
                 let height = quad.bottom - quad.top;
                 let width = quad.right - quad.left;
 
-                let mut cropped = imageops::crop(&mut result, quad.left, quad.top, width, height);
+                let mut cropped = imageops::crop(
+                    &mut result,
+                    quad.left + padding,
+                    quad.top + padding,
+                    width - padding,
+                    height - padding,
+                );
 
                 let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
 

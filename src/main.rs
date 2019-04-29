@@ -19,6 +19,11 @@ fn main() {
         None => DEFAULT_ITERATIONS,
     };
 
+    let pad = match args.get(3) {
+        Some(pad) => pad.parse().unwrap(),
+        None => false,
+    };
+
     let image = image::open(image_path)
         .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
@@ -30,5 +35,5 @@ fn main() {
         model.split();
     }
 
-    model.render(width, height);
+    model.render(width, height, pad);
 }
