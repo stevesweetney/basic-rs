@@ -1,4 +1,5 @@
 /target
 **/*.rs.bk
-output.png
+*.png
+!input.png
 .DS_Store
