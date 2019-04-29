@@ -1,34 +1,13 @@
 use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbImage};
-use std::cell::{Ref, RefCell, RefMut};
-use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
+use std::cell::RefCell;
 use std::collections::BinaryHeap;
 use std::rc::Rc;
 
-type Color = (u8, u8, u8);
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
-struct RcQuad(Rc<RefCell<Quad>>);
+mod quads;
+use quads::{Quad, RcQuad};
 
-impl RcQuad {
-    fn new(q: Quad) -> RcQuad {
-        RcQuad(Rc::new(RefCell::new(q)))
-    }
-
-    fn borrow(&self) -> Ref<Quad> {
-        self.0.borrow()
-    }
-
-    fn borrow_mut(&mut self) -> RefMut<Quad> {
-        self.0.borrow_mut()
-    }
-
-    fn into_inner(&self) -> Quad {
-        (*self.0).clone().into_inner()
-    }
-}
-
-type RcImage = Rc<RefCell<DynamicImage>>;
-
-const SMALL_SIZE: u32 = 4;
+pub type Color = (u8, u8, u8);
+pub type RcImage = Rc<RefCell<DynamicImage>>;
 
 pub struct Model {
     width: u32,
@@ -100,123 +79,6 @@ impl Model {
     }
 }
 
-#[derive(Clone)]
-struct Quad {
-    left: u32,
-    top: u32,
-    right: u32,
-    bottom: u32,
-    color: Color,
-    error: f32,
-    children: Vec<RcQuad>,
-    image: RcImage,
-}
-
-impl Quad {
-    fn new(left: u32, top: u32, right: u32, bottom: u32, image: RcImage) -> Self {
-        let cropped_image = image
-            .borrow_mut()
-            .crop(left, top, right - left, bottom - top);
-        let (color, error) = average_color_from_image(&cropped_image);
-
-        Self {
-            left,
-            top,
-            right,
-            bottom,
-            color,
-            error,
-            children: Vec::new(),
-            image,
-        }
-    }
-
-    fn area(&self) -> u32 {
-        self.width() * self.height()
-    }
-
-    fn height(&self) -> u32 {
-        self.bottom - self.top
-    }
-
-    fn width(&self) -> u32 {
-        self.right - self.left
-    }
-
-    fn split(&mut self) {
-        let mid_x = self.left + self.width() / 2;
-        let mid_y = self.top + self.height() / 2;
-
-        let tl = Quad::new(self.left, self.top, mid_x, mid_y, self.image.clone());
-        let tr = Quad::new(mid_x, self.top, self.right, mid_y, self.image.clone());
-        let bl = Quad::new(self.left, mid_y, mid_x, self.bottom, self.image.clone());
-        let br = Quad::new(mid_x, mid_y, self.right, self.bottom, self.image.clone());
-
-        self.children.clear();
-        self.children.push(RcQuad::new(tl));
-        self.children.push(RcQuad::new(tr));
-        self.children.push(RcQuad::new(bl));
-        self.children.push(RcQuad::new(br));
-    }
-
-    fn get_leaf_nodes(self) -> Vec<RcQuad> {
-        let mut leaves = Vec::new();
-        Self::leaves(RcQuad::new(self), &mut leaves);
-
-        leaves
-    }
-
-    fn leaves(quad: RcQuad, leaves: &mut Vec<RcQuad>) {
-        if quad.borrow().children.is_empty() {
-            leaves.push(quad);
-            return;
-        }
-
-        for child in quad.borrow().children.iter().cloned() {
-            Self::leaves(child, leaves)
-        }
-    }
-
-    fn score(&self) -> f64 {
-        f64::from(self.error) * f64::from(self.area()).powf(0.25)
-    }
-}
-
-impl Ord for Quad {
-    fn cmp(&self, other: &Quad) -> Ordering {
-        match (is_small(self), is_small(other)) {
-            (true, false) => Ordering::Less,
-            (false, true) => Ordering::Greater,
-            _ => {
-                let score = self.score();
-                let other_score = other.score();
-
-                match score.partial_cmp(&other_score) {
-                    Some(ordering) => ordering,
-                    None => Ordering::Greater,
-                }
-            }
-        }
-    }
-}
-
-impl PartialOrd for Quad {
-    fn partial_cmp(&self, other: &Quad) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for Quad {
-    fn eq(&self, other: &Quad) -> bool {
-        self.top == other.top
-            && self.left == other.left
-            && self.right == other.right
-            && self.bottom == other.bottom
-    }
-}
-
-impl Eq for Quad {}
-
 fn average_color_from_image(image: &DynamicImage) -> (Color, f32) {
     let mut histogram = [0; 768];
     for (_x, _y, pix) in image.pixels() {
@@ -261,8 +123,4 @@ fn weighted_average(histogram: &[u32]) -> (u32, f32) {
     }
 
     (value, ((error / u64::from(total)) as f32).sqrt())
-}
-
-fn is_small(q: &Quad) -> bool {
-    (q.width() < SMALL_SIZE) || (q.height() < SMALL_SIZE)
 }
