@@ -8,6 +8,8 @@ type Color = (u8, u8, u8);
 type RcQuad = Rc<RefCell<Quad>>;
 type RcImage = Rc<RefCell<DynamicImage>>;
 
+const SMALL_SIZE: u32 = 4;
+
 pub struct Model {
     width: u32,
     height: u32,
@@ -152,12 +154,18 @@ impl Quad {
 
 impl Ord for Quad {
     fn cmp(&self, other: &Quad) -> Ordering {
-        let score = self.score();
-        let other_score = other.score();
+        match (is_small(self), is_small(other)) {
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            _ => {
+                let score = self.score();
+                let other_score = other.score();
 
-        match score.partial_cmp(&other_score) {
-            Some(ordering) => ordering,
-            None => Ordering::Greater,
+                match score.partial_cmp(&other_score) {
+                    Some(ordering) => ordering,
+                    None => Ordering::Greater,
+                }
+            }
         }
     }
 }
@@ -223,4 +231,8 @@ fn weighted_average(histogram: &[u32]) -> (u32, f32) {
     }
 
     (value, ((error / u64::from(total)) as f32).sqrt())
+}
+
+fn is_small(q: &Quad) -> bool {
+    (q.right - q.left < SMALL_SIZE) || (q.bottom - q.top < SMALL_SIZE)
 }
