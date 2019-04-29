@@ -54,15 +54,13 @@ impl Model {
 
             for quad in root.get_leaf_nodes() {
                 let quad = quad.borrow();
-                let height = quad.bottom - quad.top;
-                let width = quad.right - quad.left;
 
                 let mut cropped = imageops::crop(
                     &mut result,
                     quad.left + padding,
                     quad.top + padding,
-                    width - padding,
-                    height - padding,
+                    quad.width() - padding,
+                    quad.height() - padding,
                 );
 
                 let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
@@ -115,12 +113,20 @@ impl Quad {
     }
 
     fn area(&self) -> u32 {
-        (self.right - self.left) * (self.bottom - self.top)
+        self.width() * self.height()
+    }
+
+    fn height(&self) -> u32 {
+        self.bottom - self.top
+    }
+
+    fn width(&self) -> u32 {
+        self.right - self.left
     }
 
     fn split(&mut self) {
-        let mid_x = self.left + (self.right - self.left) / 2;
-        let mid_y = self.top + (self.bottom - self.top) / 2;
+        let mid_x = self.left + self.width() / 2;
+        let mid_y = self.top + self.height() / 2;
 
         let tl = Quad::new(self.left, self.top, mid_x, mid_y, self.image.clone());
         let tr = Quad::new(mid_x, self.top, self.right, mid_y, self.image.clone());
@@ -239,5 +245,5 @@ fn weighted_average(histogram: &[u32]) -> (u32, f32) {
 }
 
 fn is_small(q: &Quad) -> bool {
-    (q.right - q.left < SMALL_SIZE) || (q.bottom - q.top < SMALL_SIZE)
+    (q.width() < SMALL_SIZE) || (q.height() < SMALL_SIZE)
 }
