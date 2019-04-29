@@ -49,7 +49,7 @@ impl Model {
         if let Some(root) = self.root.take() {
             let padding = if pad { 1 } else { 0 };
             let mut result = RgbImage::new(self.width + padding, self.height + padding);
-            let root = root.into_inner();
+            let root = root.to_inner();
 
             for quad in root.get_leaf_nodes() {
                 let quad = quad.borrow();

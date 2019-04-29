@@ -19,7 +19,7 @@ impl RcQuad {
         self.0.borrow_mut()
     }
 
-    pub fn into_inner(&self) -> Quad {
+    pub fn to_inner(&self) -> Quad {
         (*self.0).clone().into_inner()
     }
 }
