@@ -46,7 +46,7 @@ impl Model {
         }
     }
 
-    pub fn render(&mut self, result_width: u32, result_height: u32, pad: bool) {
+    pub fn render(&mut self, result_name: &str, result_width: u32, result_height: u32, pad: bool) {
         if let Some(root) = self.root.take() {
             let padding = if pad { 1 } else { 0 };
             let mut result = RgbImage::new(self.width + padding, self.height + padding);
@@ -78,9 +78,7 @@ impl Model {
 
             let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
 
-            resized
-                .save("./output.png")
-                .expect("Error saving output.png");
+            resized.save(result_name).expect("Error saving output.png");
         }
     }
 }

@@ -21,7 +21,7 @@ fn basic_use() {
         model.split();
     }
 
-    model.render(width, height, false);
+    model.render("output.png", width, height, false);
 }
 
 fn benchmark(c: &mut Criterion) {

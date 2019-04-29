@@ -23,6 +23,15 @@ fn main() {
                 .required(true),
         )
         .arg(
+            Arg::with_name("output")
+                .short("o")
+                .long("output")
+                .value_name("FILE")
+                .help("Name of the output image")
+                .takes_value(true)
+                .default_value("output.png"),
+        )
+        .arg(
             Arg::with_name("iterations")
                 .long("iters")
                 .help("Set the number of times the algorithm will run")
@@ -39,6 +48,7 @@ fn main() {
         .get_matches();
 
     let image_path = matches.value_of("input").unwrap();
+    let output_name = matches.value_of("output").unwrap();
     let iterations = matches
         .value_of("iterations")
         .and_then(|iter| iter.parse().ok())
@@ -56,5 +66,5 @@ fn main() {
         model.split();
     }
 
-    model.render(width, height, pad);
+    model.render(output_name, width, height, pad);
 }
