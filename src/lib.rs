@@ -1,11 +1,31 @@
 use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbImage};
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BinaryHeap;
 use std::rc::Rc;
 
 type Color = (u8, u8, u8);
-type RcQuad = Rc<RefCell<Quad>>;
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
+struct RcQuad(Rc<RefCell<Quad>>);
+
+impl RcQuad {
+    fn new(q: Quad) -> RcQuad {
+        RcQuad(Rc::new(RefCell::new(q)))
+    }
+
+    fn borrow(&self) -> Ref<Quad> {
+        self.0.borrow()
+    }
+
+    fn borrow_mut(&mut self) -> RefMut<Quad> {
+        self.0.borrow_mut()
+    }
+
+    fn into_inner(&self) -> Quad {
+        (*self.0).clone().into_inner()
+    }
+}
+
 type RcImage = Rc<RefCell<DynamicImage>>;
 
 const SMALL_SIZE: u32 = 4;
@@ -23,7 +43,7 @@ impl Model {
         let target = Rc::new(RefCell::new(target));
 
         let q = Quad::new(0, 0, width, height, target.clone());
-        let root = Rc::new(RefCell::new(q));
+        let root = RcQuad::new(q);
 
         let mut quads = BinaryHeap::new();
         quads.push(root.clone());
@@ -36,7 +56,7 @@ impl Model {
     }
 
     pub fn split(&mut self) {
-        if let Some(quad) = self.quads.pop() {
+        if let Some(mut quad) = self.quads.pop() {
             let mut quad = quad.borrow_mut();
             quad.split();
 
@@ -50,11 +70,10 @@ impl Model {
         if let Some(root) = self.root.take() {
             let padding = if pad { 1 } else { 0 };
             let mut result = RgbImage::new(self.width + padding, self.height + padding);
-            let root = (*root).clone().into_inner();
+            let root = root.into_inner();
 
             for quad in root.get_leaf_nodes() {
                 let quad = quad.borrow();
-
                 let mut cropped = imageops::crop(
                     &mut result,
                     quad.left + padding,
@@ -134,15 +153,15 @@ impl Quad {
         let br = Quad::new(mid_x, mid_y, self.right, self.bottom, self.image.clone());
 
         self.children.clear();
-        self.children.push(Rc::new(RefCell::new(tl)));
-        self.children.push(Rc::new(RefCell::new(tr)));
-        self.children.push(Rc::new(RefCell::new(bl)));
-        self.children.push(Rc::new(RefCell::new(br)));
+        self.children.push(RcQuad::new(tl));
+        self.children.push(RcQuad::new(tr));
+        self.children.push(RcQuad::new(bl));
+        self.children.push(RcQuad::new(br));
     }
 
     fn get_leaf_nodes(self) -> Vec<RcQuad> {
         let mut leaves = Vec::new();
-        Self::leaves(Rc::new(RefCell::new(self)), &mut leaves);
+        Self::leaves(RcQuad::new(self), &mut leaves);
 
         leaves
     }
