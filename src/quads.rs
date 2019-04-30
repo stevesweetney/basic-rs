@@ -1,6 +1,7 @@
 use super::{average_color_from_image, Color, RcImage};
 use std::cell::{Ref, RefCell, RefMut};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 #[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -21,6 +22,12 @@ impl RcQuad {
 
     pub fn to_inner(&self) -> Quad {
         (*self.0).clone().into_inner()
+    }
+}
+
+impl Hash for RcQuad {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.to_inner().hash(state);
     }
 }
 
@@ -83,26 +90,17 @@ impl Quad {
         self.children.push(RcQuad::new(br));
     }
 
-    pub fn get_leaf_nodes(self) -> Vec<RcQuad> {
-        let mut leaves = Vec::new();
-        Self::leaves(RcQuad::new(self), &mut leaves);
-
-        leaves
-    }
-
-    pub fn leaves(quad: RcQuad, leaves: &mut Vec<RcQuad>) {
-        if quad.borrow().children.is_empty() {
-            leaves.push(quad);
-            return;
-        }
-
-        for child in quad.borrow().children.iter().cloned() {
-            Self::leaves(child, leaves)
-        }
-    }
-
     pub fn score(&self) -> f64 {
         f64::from(self.error) * f64::from(self.area()).powf(0.25)
+    }
+}
+
+impl Hash for Quad {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.top.hash(state);
+        self.left.hash(state);
+        self.right.hash(state);
+        self.bottom.hash(state);
     }
 }
 

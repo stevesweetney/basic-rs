@@ -1,6 +1,6 @@
 use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbImage};
 use std::cell::RefCell;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashSet};
 use std::rc::Rc;
 
 mod quads;
@@ -13,7 +13,7 @@ pub struct Model {
     width: u32,
     height: u32,
     quads: BinaryHeap<RcQuad>,
-    root: Option<RcQuad>,
+    leaves: HashSet<RcQuad>,
 }
 
 impl Model {
@@ -25,57 +25,58 @@ impl Model {
         let root = RcQuad::new(q);
 
         let mut quads = BinaryHeap::new();
+        let mut leaves = HashSet::new();
         quads.push(root.clone());
+        leaves.insert(root.clone());
         Self {
-            root: Some(root),
             height,
             width,
             quads,
+            leaves,
         }
     }
 
     pub fn split(&mut self) {
         if let Some(mut quad) = self.quads.pop() {
+            self.leaves.remove(&quad);
             let mut quad = quad.borrow_mut();
             quad.split();
 
             for child in &quad.children {
+                self.leaves.insert(child.clone());
                 self.quads.push(child.clone())
             }
         }
     }
 
     pub fn render(&self, result_name: &str, result_width: u32, result_height: u32, pad: bool) {
-        if let Some(root) = self.root.as_ref() {
-            let padding = if pad { 1 } else { 0 };
-            let mut result = RgbImage::new(self.width + padding, self.height + padding);
-            let root = root.to_inner();
+        let padding = if pad { 1 } else { 0 };
+        let mut result = RgbImage::new(self.width + padding, self.height + padding);
 
-            for quad in root.get_leaf_nodes() {
-                let quad = quad.borrow();
-                let mut cropped = imageops::crop(
-                    &mut result,
-                    quad.left + padding,
-                    quad.top + padding,
-                    quad.width() - padding,
-                    quad.height() - padding,
-                );
+        for quad in &self.leaves {
+            let quad = quad.borrow();
+            let mut cropped = imageops::crop(
+                &mut result,
+                quad.left + padding,
+                quad.top + padding,
+                quad.width() - padding,
+                quad.height() - padding,
+            );
 
-                let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
+            let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
 
-                for (x, y) in coords {
-                    let p = cropped.get_pixel_mut(x, y);
-                    let ch = p.channels_mut();
-                    ch[0] = quad.color.0;
-                    ch[1] = quad.color.1;
-                    ch[2] = quad.color.2;
-                }
+            for (x, y) in coords {
+                let p = cropped.get_pixel_mut(x, y);
+                let ch = p.channels_mut();
+                ch[0] = quad.color.0;
+                ch[1] = quad.color.1;
+                ch[2] = quad.color.2;
             }
-
-            let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
-
-            resized.save(result_name).expect("Error saving output.png");
         }
+
+        let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
+
+        resized.save(result_name).expect("Error saving output.png");
     }
 }
 
