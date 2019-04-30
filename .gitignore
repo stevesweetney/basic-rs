@@ -1,5 +1,7 @@
 /target
 **/*.rs.bk
 *.png
+*.gif
+*.jpg
 !input.png
 .DS_Store

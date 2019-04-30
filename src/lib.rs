@@ -1,6 +1,9 @@
-use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbImage};
+use image::{
+    self, imageops, DynamicImage, Frame, GenericImage, GenericImageView, Pixel, RgbaImage,
+};
 use std::cell::RefCell;
 use std::collections::{BinaryHeap, HashSet};
+use std::path::Path;
 use std::rc::Rc;
 
 mod quads;
@@ -49,9 +52,14 @@ impl Model {
         }
     }
 
-    pub fn render(&self, result_name: &str, result_width: u32, result_height: u32, pad: bool) {
+    fn get_curr_image(
+        &self,
+        result_width: u32,
+        result_height: u32,
+        pad: bool,
+    ) -> Option<RgbaImage> {
         let padding = if pad { 1 } else { 0 };
-        let mut result = RgbImage::new(self.width + padding, self.height + padding);
+        let mut result = RgbaImage::new(self.width + padding, self.height + padding);
 
         for quad in &self.leaves {
             let quad = quad.borrow();
@@ -63,20 +71,40 @@ impl Model {
                 quad.height() - padding,
             );
 
-            let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
+            //let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
 
-            for (x, y) in coords {
-                let p = cropped.get_pixel_mut(x, y);
+            for (_, _, p) in cropped.pixels_mut() {
+                //let p = cropped.get_pixel_mut(x, y);
                 let ch = p.channels_mut();
                 ch[0] = quad.color.0;
                 ch[1] = quad.color.1;
                 ch[2] = quad.color.2;
+                ch[3] = 255;
             }
         }
-
         let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
+        return Some(resized);
+    }
 
-        resized.save(result_name).expect("Error saving output.png");
+    pub fn render<P: AsRef<Path>>(
+        &self,
+        result_name: P,
+        result_width: u32,
+        result_height: u32,
+        pad: bool,
+    ) {
+        if let Some(image) = self.get_curr_image(result_width, result_height, pad) {
+            image
+                .save(&result_name)
+                .unwrap_or_else(|_| panic!("Error saving image"));
+        } else {
+            unreachable!()
+        }
+    }
+
+    pub fn get_frame(&self, result_width: u32, result_height: u32, pad: bool) -> Option<Frame> {
+        self.get_curr_image(result_width, result_height, pad)
+            .map(|image| Frame::new(image))
     }
 }
 
