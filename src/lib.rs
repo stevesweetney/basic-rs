@@ -1,6 +1,4 @@
-use image::{
-    self, imageops, DynamicImage, Frame, GenericImage, GenericImageView, Pixel, RgbaImage,
-};
+use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbaImage};
 use std::cell::RefCell;
 use std::collections::{BinaryHeap, HashSet};
 use std::path::Path;
@@ -52,7 +50,7 @@ impl Model {
         }
     }
 
-    fn get_curr_image(
+    pub fn get_curr_image(
         &self,
         result_width: u32,
         result_height: u32,
@@ -100,11 +98,6 @@ impl Model {
         } else {
             unreachable!()
         }
-    }
-
-    pub fn get_frame(&self, result_width: u32, result_height: u32, pad: bool) -> Option<Frame> {
-        self.get_curr_image(result_width, result_height, pad)
-            .map(|image| Frame::new(image))
     }
 }
 
