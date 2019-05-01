@@ -1,14 +1,9 @@
+use basic::Model;
 use clap::{App, Arg};
 use gifski::{self, progress::NoProgress, Settings};
 use image::{self, imageops, GenericImageView};
-use std::fs::File;
-use std::sync::mpsc;
-use std::thread;
+use std::{fs::File, path::Path, sync::mpsc, thread};
 use tempdir::TempDir;
-
-use std::path::Path;
-
-use basic::Model;
 
 const IMAGE_BOUNDS: u32 = 256;
 

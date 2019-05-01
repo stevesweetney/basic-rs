@@ -1,8 +1,10 @@
 use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbaImage};
-use std::cell::RefCell;
-use std::collections::{BinaryHeap, HashSet};
-use std::path::Path;
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    collections::{BinaryHeap, HashSet},
+    path::Path,
+    rc::Rc,
+};
 
 mod quads;
 use quads::{Quad, RcQuad};
