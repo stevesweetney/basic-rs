@@ -1,8 +1,8 @@
 use basic::Model;
 use clap::{App, Arg};
-use gifski::{self, progress::NoProgress, Settings};
+use gifski::{self, progress::ProgressBar, Settings};
 use image::{self, imageops, GenericImageView};
-use std::{fs::File, path::Path, sync::mpsc, thread};
+use std::{fs::File, io::Stdout, path::Path, sync::mpsc, thread};
 use tempdir::TempDir;
 
 const IMAGE_BOUNDS: u32 = 256;
@@ -36,7 +36,7 @@ fn main() {
     let (width, height) = image.dimensions();
 
     let mut model = Model::new(image.resize(IMAGE_BOUNDS, IMAGE_BOUNDS, imageops::Nearest));
-
+    println!("Simplifying image...");
     if matches.is_present("gif") {
         let temp_dir = TempDir::new("basic").expect("Could not create temp dir");
         let (mut collector, writer) = gifski::new(SETTINGS).unwrap();
@@ -61,7 +61,8 @@ fn main() {
         }
 
         drop(sender);
-        let mut progess = NoProgress {};
+        println!("Encoding gif...");
+        let mut progess = ProgressBar::<Stdout>::new(iterations);
         let gif_file =
             File::create(output_name.with_extension("gif")).expect("Could not create gif");
         writer
