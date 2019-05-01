@@ -148,3 +148,37 @@ fn weighted_average(histogram: &[u32]) -> (u32, f32) {
 
     (value, ((error / u64::from(total)) as f32).sqrt())
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn create_model() {
+        let image_path = "./input.jpg";
+
+        let image = image::open(image_path)
+            .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
+
+        let (width, height) = image.dimensions();
+
+        let model = Model::new(image);
+
+        assert_eq!(model.width, width);
+        assert_eq!(model.height, height);
+        assert_eq!(model.leaves.len(), 1);
+        assert_eq!(model.quads.len(), 1);
+    }
+    #[test]
+    fn split() {
+        let image_path = "./input.jpg";
+        let image = image::open(image_path)
+            .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
+
+        let mut model = Model::new(image);
+        model.split();
+
+        assert_eq!(model.leaves.len(), 4);
+        assert_eq!(model.quads.len(), 4);
+    }
+}
