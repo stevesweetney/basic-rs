@@ -83,9 +83,7 @@ impl Model {
         pad: bool,
     ) {
         if let Some(image) = self.get_curr_image(result_width, result_height, pad) {
-            image
-                .save(&result_name)
-                .unwrap_or_else(|_| panic!("Error saving image"));
+            image.save(&result_name).expect("Error saving image");
         } else {
             unreachable!()
         }
