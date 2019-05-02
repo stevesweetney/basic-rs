@@ -1,10 +1,5 @@
 use image::{self, imageops, DynamicImage, GenericImage, GenericImageView, Pixel, RgbaImage};
-use std::{
-    cell::RefCell,
-    collections::{BinaryHeap, HashSet},
-    path::Path,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::BinaryHeap, path::Path, rc::Rc};
 
 mod quads;
 use quads::{Quad, RcQuad};
@@ -16,7 +11,6 @@ pub struct Model {
     width: u32,
     height: u32,
     quads: BinaryHeap<RcQuad>,
-    leaves: HashSet<RcQuad>,
 }
 
 impl Model {
@@ -28,25 +22,20 @@ impl Model {
         let root = RcQuad::new(q);
 
         let mut quads = BinaryHeap::new();
-        let mut leaves = HashSet::new();
         quads.push(root.clone());
-        leaves.insert(root.clone());
         Self {
             height,
             width,
             quads,
-            leaves,
         }
     }
 
     pub fn split(&mut self) {
         if let Some(mut quad) = self.quads.pop() {
-            self.leaves.remove(&quad);
             let mut quad = quad.borrow_mut();
             quad.split();
 
             for child in &quad.children {
-                self.leaves.insert(child.clone());
                 self.quads.push(child.clone())
             }
         }
@@ -61,7 +50,7 @@ impl Model {
         let padding = if pad { 1 } else { 0 };
         let mut result = RgbaImage::new(self.width + padding, self.height + padding);
 
-        for quad in &self.leaves {
+        for quad in &self.quads {
             let quad = quad.borrow();
             let mut cropped = imageops::crop(
                 &mut result,
@@ -166,7 +155,6 @@ mod test {
 
         assert_eq!(model.width, width);
         assert_eq!(model.height, height);
-        assert_eq!(model.leaves.len(), 1);
         assert_eq!(model.quads.len(), 1);
     }
     #[test]
@@ -178,7 +166,6 @@ mod test {
         let mut model = Model::new(image);
         model.split();
 
-        assert_eq!(model.leaves.len(), 4);
         assert_eq!(model.quads.len(), 4);
     }
 }
