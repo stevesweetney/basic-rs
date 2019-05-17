@@ -1,9 +1,10 @@
 use basic::Model;
 use clap::{App, Arg};
 use gifski::{self, progress::ProgressBar, Settings};
-use image::{self, imageops, GenericImageView};
+use image::{self, imageops, GenericImageView, Pixel};
+use imgref::Img;
+use rgb::{RGBA, RGBA8};
 use std::{fs::File, io::Stdout, path::Path, sync::mpsc, thread};
-use tempdir::TempDir;
 
 const IMAGE_BOUNDS: u32 = 256;
 
@@ -38,24 +39,27 @@ fn main() {
     let mut model = Model::new(image.resize(IMAGE_BOUNDS, IMAGE_BOUNDS, imageops::Nearest));
     println!("Simplifying image...");
     if matches.is_present("gif") {
-        let temp_dir = TempDir::new("basic").expect("Could not create temp dir");
         let (mut collector, writer) = gifski::new(SETTINGS).unwrap();
         let (sender, reciever) = mpsc::channel();
         let _ = thread::spawn(move || {
             let mut count = 0;
-            while let Ok(path) = reciever.recv() {
-                collector.add_frame_png_file(count, path, 2).unwrap();
+            while let Ok(img_vec) = reciever.recv() {
+                collector.add_frame_rgba(count, img_vec, 2).unwrap();
                 count += 1;
             }
         });
 
-        for i in 0..=iterations {
+        for _ in 0..=iterations {
             let image = model.get_curr_image(width, height, pad).unwrap();
-            let temp_image_path = temp_dir.path().join(i.to_string()).with_extension("png");
-            image
-                .save(&temp_image_path)
-                .expect("Could not save gif frame");
-            sender.send(temp_image_path).unwrap();
+            let pixels: Vec<RGBA8> = image
+                .pixels()
+                .map(|pix| {
+                    let ch = pix.channels();
+                    RGBA::new(ch[0], ch[1], ch[2], ch[3])
+                })
+                .collect();
+            let img_vec = Img::new(pixels, image.width() as usize, image.height() as usize);
+            sender.send(img_vec).unwrap();
 
             model.split();
         }
