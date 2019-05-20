@@ -4,7 +4,7 @@ use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, PartialOrd, Eq, Ord)]
 pub struct RcQuad(Rc<RefCell<Quad>>);
 
 impl RcQuad {
@@ -28,6 +28,12 @@ impl RcQuad {
 impl Hash for RcQuad {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.to_inner().hash(state);
+    }
+}
+
+impl PartialEq for RcQuad {
+    fn eq(&self, other: &RcQuad) -> bool {
+        self.to_inner().eq(&other.to_inner())
     }
 }
 

@@ -68,7 +68,7 @@ impl Model {
 
             coords.clear();
         }
-        return Some(result);
+        Some(result)
     }
 
     pub fn render<P: AsRef<Path>>(&self, result_name: P, pad: bool) {
