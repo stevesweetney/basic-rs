@@ -50,6 +50,7 @@ impl Model {
         let padding = if pad { 1 } else { 0 };
         let mut result = RgbaImage::new(self.width + padding, self.height + padding);
 
+        let mut coords = Vec::new();
         for quad in &self.quads {
             let quad = quad.borrow();
             let mut cropped = imageops::crop(
@@ -60,16 +61,17 @@ impl Model {
                 quad.height() - padding,
             );
 
-            //let coords: Vec<_> = cropped.pixels().map(|(x, y, _)| (x, y)).collect();
-
-            for (_, _, p) in cropped.pixels_mut() {
-                //let p = cropped.get_pixel_mut(x, y);
+            coords.extend(cropped.pixels().map(|(x, y, _)| (x, y)));
+            for (x, y) in &coords {
+                let p = cropped.get_pixel_mut(*x, *y);
                 let ch = p.channels_mut();
                 ch[0] = quad.color.0;
                 ch[1] = quad.color.1;
                 ch[2] = quad.color.2;
                 ch[3] = 255;
             }
+
+            coords.clear();
         }
         let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
         return Some(resized);
