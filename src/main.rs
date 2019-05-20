@@ -1,12 +1,10 @@
 use basic::Model;
 use clap::{App, Arg};
 use gifski::{self, progress::ProgressBar, Settings};
-use image::{self, imageops, GenericImageView, Pixel};
+use image::{self, Pixel};
 use imgref::Img;
 use rgb::{RGBA, RGBA8};
 use std::{fs::File, io::Stdout, path::Path, sync::mpsc, thread};
-
-const IMAGE_BOUNDS: u32 = 256;
 
 const SETTINGS: Settings = Settings {
     width: None,
@@ -34,9 +32,7 @@ fn main() {
     let image = image::open(image_path)
         .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
-    let (width, height) = image.dimensions();
-
-    let mut model = Model::new(image.resize(IMAGE_BOUNDS, IMAGE_BOUNDS, imageops::Nearest));
+    let mut model = Model::new(image);
     println!("Simplifying image...");
     if matches.is_present("gif") {
         let (mut collector, writer) = gifski::new(SETTINGS).unwrap();
@@ -50,7 +46,7 @@ fn main() {
         });
 
         for _ in 0..=iterations {
-            let image = model.get_curr_image(width, height, pad).unwrap();
+            let image = model.get_curr_image(pad).unwrap();
             let pixels: Vec<RGBA8> = image
                 .pixels()
                 .map(|pix| {
@@ -77,7 +73,7 @@ fn main() {
             model.split();
         }
     }
-    model.render(output_name, width, height, pad);
+    model.render(output_name, pad);
 }
 
 fn get_app<'a, 'b>() -> App<'a, 'b> {

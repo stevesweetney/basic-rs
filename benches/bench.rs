@@ -1,8 +1,6 @@
 use basic::Model;
 use criterion::{criterion_group, criterion_main, Criterion};
-use image::{self, imageops, GenericImageView};
-
-const IMAGE_BOUNDS: u32 = 256;
+use image;
 
 const DEFAULT_ITERATIONS: u32 = 1024;
 
@@ -13,15 +11,13 @@ fn basic_use() {
     let image = image::open(image_path)
         .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
-    let (width, height) = image.dimensions();
-
-    let mut model = Model::new(image.resize(IMAGE_BOUNDS, IMAGE_BOUNDS, imageops::Nearest));
+    let mut model = Model::new(image);
 
     for _ in 0..iterations {
         model.split();
     }
 
-    model.render("output.png", width, height, false);
+    model.render("output.png", false);
 }
 
 fn benchmark(c: &mut Criterion) {

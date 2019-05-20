@@ -41,12 +41,7 @@ impl Model {
         }
     }
 
-    pub fn get_curr_image(
-        &self,
-        result_width: u32,
-        result_height: u32,
-        pad: bool,
-    ) -> Option<RgbaImage> {
+    pub fn get_curr_image(&self, pad: bool) -> Option<RgbaImage> {
         let padding = if pad { 1 } else { 0 };
         let mut result = RgbaImage::new(self.width + padding, self.height + padding);
 
@@ -73,18 +68,11 @@ impl Model {
 
             coords.clear();
         }
-        let resized = imageops::resize(&result, result_width, result_height, imageops::Nearest);
-        return Some(resized);
+        return Some(result);
     }
 
-    pub fn render<P: AsRef<Path>>(
-        &self,
-        result_name: P,
-        result_width: u32,
-        result_height: u32,
-        pad: bool,
-    ) {
-        if let Some(image) = self.get_curr_image(result_width, result_height, pad) {
+    pub fn render<P: AsRef<Path>>(&self, result_name: P, pad: bool) {
+        if let Some(image) = self.get_curr_image(pad) {
             image.save(&result_name).expect("Error saving image");
         } else {
             unreachable!()
