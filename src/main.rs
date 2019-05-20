@@ -82,7 +82,7 @@ fn main() {
 
 fn get_app<'a, 'b>() -> App<'a, 'b> {
     App::new("basic")
-        .version("0.1")
+        .version("0.2")
         .author("Steve S.")
         .about("Making images simpler")
         .arg(
