@@ -72,11 +72,10 @@ impl Model {
     }
 
     pub fn render<P: AsRef<Path>>(&self, result_name: P, pad: bool) {
-        if let Some(image) = self.get_curr_image(pad) {
-            image.save(&result_name).expect("Error saving image");
-        } else {
-            unreachable!()
-        }
+        match self.get_curr_image(pad) {
+            Some(image) => image.save(&result_name).expect("Error saving image"),
+            _ => panic!("Could not render image"),
+        };
     }
 }
 
