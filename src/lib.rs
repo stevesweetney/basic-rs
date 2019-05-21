@@ -8,13 +8,14 @@ pub type Color = (u8, u8, u8);
 pub type RcImage = Rc<RefCell<DynamicImage>>;
 
 pub struct Model {
+    padding: bool,
     width: u32,
     height: u32,
     quads: BinaryHeap<RcQuad>,
 }
 
 impl Model {
-    pub fn new(target: DynamicImage) -> Self {
+    pub fn new(target: DynamicImage, padding: bool) -> Self {
         let (height, width) = (target.height(), target.width());
         let target = Rc::new(RefCell::new(target));
 
@@ -24,6 +25,7 @@ impl Model {
         let mut quads = BinaryHeap::new();
         quads.push(root.clone());
         Self {
+            padding,
             height,
             width,
             quads,
@@ -41,8 +43,8 @@ impl Model {
         }
     }
 
-    pub fn get_curr_image(&self, pad: bool) -> Option<RgbaImage> {
-        let padding = if pad { 1 } else { 0 };
+    pub fn get_curr_image(&self) -> Option<RgbaImage> {
+        let padding = if self.padding { 1 } else { 0 };
         let mut result = RgbaImage::new(self.width + padding, self.height + padding);
 
         let mut coords = Vec::new();
@@ -71,8 +73,8 @@ impl Model {
         Some(result)
     }
 
-    pub fn render<P: AsRef<Path>>(&self, result_name: P, pad: bool) {
-        match self.get_curr_image(pad) {
+    pub fn render<P: AsRef<Path>>(&self, result_name: P) {
+        match self.get_curr_image() {
             Some(image) => image.save(&result_name).expect("Error saving image"),
             _ => panic!("Could not render image"),
         };
@@ -138,7 +140,7 @@ mod test {
 
         let (width, height) = image.dimensions();
 
-        let model = Model::new(image);
+        let model = Model::new(image, false);
 
         assert_eq!(model.width, width);
         assert_eq!(model.height, height);
@@ -150,7 +152,7 @@ mod test {
         let image = image::open(image_path)
             .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
-        let mut model = Model::new(image);
+        let mut model = Model::new(image, false);
         model.split();
 
         assert_eq!(model.quads.len(), 4);

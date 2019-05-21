@@ -11,13 +11,13 @@ fn basic_use() {
     let image = image::open(image_path)
         .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
-    let mut model = Model::new(image);
+    let mut model = Model::new(image, false);
 
     for _ in 0..iterations {
         model.split();
     }
 
-    model.render("output.png", false);
+    model.render("output.png");
 }
 
 fn benchmark(c: &mut Criterion) {

@@ -32,7 +32,7 @@ fn main() {
     let image = image::open(image_path)
         .unwrap_or_else(|_| panic!("Error opening target image {}\n", image_path));
 
-    let mut model = Model::new(image);
+    let mut model = Model::new(image, pad);
     println!("Simplifying image...");
     if matches.is_present("gif") {
         let (mut collector, writer) = gifski::new(SETTINGS).unwrap();
@@ -46,7 +46,7 @@ fn main() {
         });
 
         for _ in 0..=iterations {
-            let image = model.get_curr_image(pad).unwrap();
+            let image = model.get_curr_image().unwrap();
             let pixels: Vec<RGBA8> = image
                 .pixels()
                 .map(|pix| {
@@ -73,7 +73,7 @@ fn main() {
             model.split();
         }
     }
-    model.render(output_name, pad);
+    model.render(output_name);
 }
 
 fn get_app<'a, 'b>() -> App<'a, 'b> {
