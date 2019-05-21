@@ -13,6 +13,7 @@ const SETTINGS: Settings = Settings {
     fast: true,
     once: false,
 };
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     let app = get_app();
@@ -78,7 +79,7 @@ fn main() {
 
 fn get_app<'a, 'b>() -> App<'a, 'b> {
     App::new("basic")
-        .version("0.2")
+        .version(VERSION)
         .author("Steve S.")
         .about("Making images simpler")
         .arg(
