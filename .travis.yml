@@ -2,49 +2,51 @@ language: rust
 sudo: false
 cache:
   directories:
-  - "/home/travis/.cargo"
+    - "/home/travis/.cargo"
 DEPLOY_TO_GITHUB:
   before_deploy: &2
-  - name="basic-$TRAVIS_TAG-$TARGET"
-  - cp target/$TARGET/release/basic ./$name
-  - tar czvf $name.tar.gz $name
+    - name="basic-$TRAVIS_TAG-$TARGET"
+    - cp target/$TARGET/release/basic ./$name
+    - tar czvf $name.tar.gz $name
   deploy: &3
     provider: releases
     api_key:
       secure: lG4fKdt6o8Tpph8RRKcYyTmMhLoJcVIa5PN+H1GqzzbwwA0Wb1U4hXIrz/AHUl419LgbUFbNWzQZDMuH/lySoovketmvGcrg3QSvYMFrEY34AhOlnOp+ILfaazltXIhh+WLBFrhCkHSyFSyXbgZJ676XMdU4ZqZD85NsY3o9j6JCll/6PDVxJr8P3m+wWmud9DFCb/ghVG4ez7xqRcum/JWeWE0/7/nP3iuz5lplUWdorA9rLUR6FB3BTUmr0JbTZjw6peTFmnZD00aews8ZsIQjJnRujuqzxPzwHN9lNn+d4ZWLi0oQ2NZSvH89sd2T4Hqv0bxcf4TnIbc/7OE8+RZ2gP9vfSmEzrj9mtxzG+eeTJvkpBNCddX1JTnXaTh0ROJh8WI36Go7zWPyefy3Lt3e8T4cSMdI/dpGMjAK3deW81nwyxFIwX8Ixhn0U02UvR/GBA2jxPyJwGXHu7yfA3LrR/1gqyp2CCXe+7xbZ/NxN4R2qPYTUXAmwYjeHEQTaPJx3EQ+oP7pJ2D41Hl6h7ywfuqrIdWMBWH0dV4I5Z/feh5rkJylxt6uelfcRLyVFQV/05OLF54kDgT6+pRxHbbkYDD8n75w4RHZ3IEKRUYZN7lu3U5LNgB3eDwMwjS9SDotVnwLkZGc9HmIqckY1YD/BlA8z4+eQsnTZqb3WyY=
     file: "basic-$TRAVIS_TAG-$TARGET.tar.gz"
+    skip_cleanup: true
     on:
       repo: stevesweetney/basic-rs
       tags: true
 matrix:
   include:
-  - name: Tests
-    env: RUST_BACKTRACE=1
-    rust: nightly
-    script:
-    - cargo test --locked
-    - rustup component add rustfmt
-    - cargo fmt --version
-    - cargo fmt --all -- --check
-  - name: Linux Binary
-    env: TARGET=x86_64-unknown-linux-musl
-    rust: stable
-    before_script: rustup target add $TARGET
-    script: cargo build --release --target $TARGET --locked
-    addons:
-      apt:
-        packages:
-        - musl-tools
-    before_deploy: *2
-    deploy: *3
-  - name: macOS Binary
-    env: MACOSX_DEPLOYMENT_TARGET=10.7 TARGET=x86_64-apple-darwin
-    os: osx
-    rust: stable
-    script: cargo build --release --target $TARGET --locked
-    install: true
-    before_deploy: *2
-    deploy: *3
+    - name: Tests
+      env: RUST_BACKTRACE=1
+      rust: nightly
+      script:
+        - cargo test --locked
+        - rustup component add rustfmt
+        - cargo fmt --version
+        - cargo fmt --all -- --check
+    - name: Linux Binary
+      os: linux
+      env: TARGET=x86_64-unknown-linux-musl
+      rust: stable
+      before_script: rustup target add $TARGET
+      script: cargo build --release --target $TARGET --locked
+      addons:
+        apt:
+          packages:
+            - musl-tools
+      before_deploy: *2
+      deploy: *3
+    - name: macOS Binary
+      env: MACOSX_DEPLOYMENT_TARGET=10.7 TARGET=x86_64-apple-darwin
+      os: osx
+      rust: stable
+      script: cargo build --release --target $TARGET --locked
+      install: true
+      before_deploy: *2
+      deploy: *3
 notifications:
   email:
     on_success: never
