@@ -32,3 +32,9 @@ run
 You can also run `cargo install --path .`
 which will build a binary in release mode and place it in your
 ~/.cargo/bin folder
+
+![Pyramids-gif](https://dl.dropboxusercontent.com/s/dswounqui3o3ecn/pyramids.gif?dl=0)
+
+![MonaLisa](https://dl.dropboxusercontent.com/s/f93co5xw10h9a7b/monalisa-output.png?dl=0)
+
+![MonaLisa-padding](https://dl.dropboxusercontent.com/s/5oy4wck0vu6fnq3/monalisa-output-pad.png?dl=0)
